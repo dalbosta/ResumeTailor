@@ -5,7 +5,7 @@ from config.config import get_config
 import os
 
 # Import the Blueprint
-from app.routes.resume_routes import resume_bp
+from app.routes.routes import resume_tailor_bp
 
 
 def create_app():
@@ -16,7 +16,7 @@ def create_app():
     app.config.from_object(get_config(env))
 
     # Register Blueprints
-    app.register_blueprint(resume_bp, url_prefix='/api')
+    app.register_blueprint(resume_tailor_bp, url_prefix='/api')
 
     @app.route('/')
     def home():

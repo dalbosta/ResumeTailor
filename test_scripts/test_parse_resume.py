@@ -1,6 +1,6 @@
 # test_parse_resume.py
 
-from app.nlp.resume_parser import parse_resume
+from app.utils import parse_resume
 
 
 def test_parse_resume():

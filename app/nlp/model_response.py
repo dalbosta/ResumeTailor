@@ -1,4 +1,5 @@
-# app/nlp/resume_suggestion.py
+# app/nlp/model_response.py
+# Generates GPT response from text inputs
 
 import openai
 
