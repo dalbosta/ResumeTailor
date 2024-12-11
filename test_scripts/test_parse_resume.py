@@ -5,7 +5,7 @@ from app.nlp.resume_parser import parse_resume
 
 def test_parse_resume():
     # Specify the path to your resume file
-    file_path = r'C:\Users\derek\PycharmProjects\ResumeTailor\data\ALBOSTA_RESUME_24.pdf'  # Change to your actual file name and extension
+    file_path = r'/data/ALBOSTA_RESUME_24.pdf'  # Change to your actual file name and extension
 
     # Call the parse_resume function
     try:
