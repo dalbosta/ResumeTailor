@@ -7,9 +7,9 @@ import openai
 openai.api_key = 'your-api-key-here'  # Replace with your actual key
 
 
-def generate_job_suggestions(resume_text, job_description_text):
+def generate_resume_suggestions(resume_text, job_description_text):
     """
-    Generates job suggestions based on resume and job description text.
+    Generates resume suggestions based on resume and job description text.
 
     :param resume_text: A string containing the text of the resume.
     :param job_description_text: A string containing the text of the job description.

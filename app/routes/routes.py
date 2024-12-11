@@ -1,7 +1,7 @@
 import os
 from flask import Blueprint, request, jsonify
 from io import BytesIO
-from app.nlp.model_response import generate_job_suggestions
+from app.nlp.model_response import generate_resume_suggestions
 from app.utils import allowed_file
 from app.utils import parse_resume
 
@@ -30,7 +30,7 @@ def upload_and_generate_response():
             raise ValueError(f"Failed to parse the resume: {str(parse_error)}")
 
         # Generate GPT suggestions using extracted resume text and job description text
-        suggestions = generate_job_suggestions(resume_text=resume_contents, job_description_text=job_description)
+        suggestions = generate_resume_suggestions(resume_text=resume_contents, job_description_text=job_description)
 
         # Return the AI's suggestions
         return jsonify({
