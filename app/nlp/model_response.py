@@ -1,10 +1,10 @@
-# app/nlp/model_response.py
-# Generates GPT response from text inputs
+from openai import OpenAI
+from secrets import OPENAI_API_KEY
 
-import openai
-
-# Initialize with your OpenAI API key
-openai.api_key = 'your-api-key-here'  # Replace with your actual key
+# Initialize the OpenAI client
+client = OpenAI(
+    api_key=OPENAI_API_KEY  # Ensure the API key is set correctly
+)
 
 
 def generate_resume_suggestions(resume_text, job_description_text):
@@ -19,22 +19,20 @@ def generate_resume_suggestions(resume_text, job_description_text):
     prompt = (f"Given the following resume text:\n{resume_text}\n\n"
               f"And the following job description text:\n{job_description_text}\n\n"
               "Suggest how well the resume fits the job description. "
-              "Provide any relevant suggestions to tailor his resume to increase chances of getting an interview.")
+              "Provide any relevant suggestions to tailor the resume to increase chances of getting an interview.")
 
     try:
-        # Interact with GPT model
-        response = openai.Completion.create(
-            engine="text-davinci-003",  # Specify the correct engine
-            prompt=prompt,
-            max_tokens=150  # Adjust tokens based on response length needs
+        # Use the OpenAI client to call the chat.completions API
+        chat_completion = client.chat.completions.create(
+            model="gpt-4o",  # Replace with the model version you intend to use
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant that provides resume suggestions."},
+                {"role": "user", "content": prompt}
+            ]
         )
 
-        suggestions = response.choices[0].text.strip()
+        # Access the message content directly using dot notation
+        suggestions = chat_completion.choices[0].message.content.strip()
         return suggestions
     except Exception as e:
         return f"An error occurred: {e}"
-
-# Usage example (would be outside of this module):
-# resume = "Text from the resume"
-# job_description = "Text from the job description"
-# print(generate_job_suggestions(resume, job_description))

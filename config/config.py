@@ -15,7 +15,7 @@ class Config:
     API_KEY = os.environ.get('API_KEY', 'your_default_api_key')
 
     # File Paths
-    DATA_FOLDER = os.path.join(os.getcwd(), 'data')
+    DATA_FOLDER = os.path.join(os.getcwd(), 'test_data')
 
     # Add other base configurations here
 

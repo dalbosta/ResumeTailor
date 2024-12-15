@@ -1,3 +1,7 @@
-.venv1
+.venv
+.env
 .idea
 test_scripts/
+secrets.py
+__pycache__/
+*.pyc
