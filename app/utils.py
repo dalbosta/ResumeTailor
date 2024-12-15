@@ -1,54 +1,52 @@
 import os
+import tempfile
+
 import PyPDF2
 from docx import Document
 from pdf2image import convert_from_path
 import pytesseract
 
+# Define allowed file extensions
+ALLOWED_EXTENSIONS = {'pdf', 'doc', 'docx', 'txt'}
 
-def allowed_file(filename, allowed_extensions={'pdf', 'doc', 'docx'}):
+
+def parse_resume(file_like):
     """
-    Check if the uploaded file has an allowed extension.
+    Function to parse a resume file (FileStorage or file path) and extract all text.
 
-    :param filename: The name of the uploaded file.
-    :param allowed_extensions: Set of allowed file extensions.
-    :return: True if the file extension is allowed, False otherwise.
-    """
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_extensions
-
-
-def save_file(file, upload_path):
-    """
-    Saves the uploaded file to the designated path.
-
-    :param file: File object from request.
-    :param upload_path: Path to save the file.
-    :return: Path where the file is saved.
-    """
-    filepath = os.path.join(upload_path, file.filename)
-    file.save(filepath)
-    return filepath
-
-def parse_resume(file_path):
-    """
-    Function to parse a resume file and extract all text.
-
-    :param file_path: The path to the resume file.
+    :param file_like: The file or file-like object (path or FileStorage).
     :return: A string containing all the text from the resume.
     """
-    _, file_extension = os.path.splitext(file_path)
-    file_extension = file_extension.lower()
+    temp_file = None
+    try:
+        # Check if `file_like` is a path or FileStorage object
+        if isinstance(file_like, str):
+            file_path = file_like
+        else:
+            # Save the uploaded file temporarily
+            temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file_like.filename)[1])
+            file_like.save(temp_file.name)
+            temp_file.close()  # Explicitly close the file handle
+            file_path = temp_file.name
 
-    if file_extension == '.pdf':
-        text = extract_text_from_pdf(file_path)
-        if not text.strip():
-            # Fallback to OCR if no text is extracted
-            print("No text extracted; attempting OCR...")
-            text = extract_text_from_pdf_with_ocr(file_path)
-        return text
-    elif file_extension == '.docx':
-        return extract_text_from_docx(file_path)
-    else:
-        raise ValueError(f"Unsupported file format: {file_extension}")
+        # Determine file extension and parse accordingly
+        file_extension = os.path.splitext(file_path)[1].lower()
+
+        if file_extension == '.pdf':
+            text = extract_text_from_pdf(file_path)
+            if not text.strip():
+                print("No text extracted; attempting OCR...")
+                text = extract_text_from_pdf_with_ocr(file_path)
+            return text
+        elif file_extension == '.docx':
+            return extract_text_from_docx(file_path)
+        else:
+            raise ValueError(f"Unsupported file format: {file_extension}")
+
+    finally:
+        # Clean up the temporary file if it was created
+        if temp_file and os.path.exists(temp_file.name):
+            os.unlink(temp_file.name)
 
 
 def extract_text_from_pdf(file_path):
@@ -80,5 +78,13 @@ def extract_text_from_docx(file_path):
         text += paragraph.text + '\n'
     return text
 
-# Usage of pytesseract requires it to be installed on your machine.
 
+def allowed_file(filename):
+    """
+    Validate if a file has one of the allowed extensions.
+    :param filename: Name of the file to check
+    :return: Boolean indicating if the file is allowed
+    """
+
+    # Validate if file has a proper extension
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
