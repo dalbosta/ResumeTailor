@@ -3,10 +3,7 @@ from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 from api_keys.keys import OPENAI_API_KEY
 
-# Initialize the OpenAI client
-client = OpenAI(
-    api_key=OPENAI_API_KEY  # Ensure the API key is set correctly
-)
+from .templates import COMPATIBILITY_TEMPLATE, SUGGESTIONS_TEMPLATE, BULLET_POINTS_TEMPLATE
 
 
 def generate_resume_suggestions(resume_text, job_description):
@@ -19,54 +16,23 @@ def generate_resume_suggestions(resume_text, job_description):
     :return: Dictionary containing compatibility evaluation, suggestions, and bullet points.
     """
 
-    # Initialize the OpenAI client (LangChain LLM)
+    # Initialize the OpenAI client
     llm = OpenAI(temperature=0, openai_api_key=OPENAI_API_KEY)
 
-    # Define template and chain for compatibility evaluation
-    compatibility_template = """
-    Evaluate the compatibility between the following resume and job description on a scale from 1 to 10, 
-    and provide specific strengths and weaknesses.
-
-    Resume:
-    {resume_text}
-
-    Job Description:
-    {job_description}
-    """
-
+    # Define template-based chains using imported templates
     compatibility_chain = LLMChain(
         llm=llm,
-        prompt=PromptTemplate(template=compatibility_template, input_variables=["resume_text", "job_description"])
+        prompt=PromptTemplate(template=COMPATIBILITY_TEMPLATE, input_variables=["resume_text", "job_description"])
     )
-
-    # Define template and chain for improvement suggestions
-    suggestions_template = """
-    Provide actionable suggestions on how the resume can be improved to align better with the following job description:
-
-    Resume:
-    {resume_text}
-
-    Job Description:
-    {job_description}
-    """
 
     suggestions_chain = LLMChain(
         llm=llm,
-        prompt=PromptTemplate(template=suggestions_template, input_variables=["resume_text", "job_description"])
+        prompt=PromptTemplate(template=SUGGESTIONS_TEMPLATE, input_variables=["resume_text", "job_description"])
     )
-
-    # Define template and chain for example bullet points
-    bullet_points_template = """
-    Based on the following job description, generate three formatted and result-oriented resume bullet points 
-    to enhance the provided resume. Use professional language.
-
-    Job Description:
-    {job_description}
-    """
 
     bullet_points_chain = LLMChain(
         llm=llm,
-        prompt=PromptTemplate(template=bullet_points_template, input_variables=["job_description"])
+        prompt=PromptTemplate(template=BULLET_POINTS_TEMPLATE, input_variables=["job_description"])
     )
 
     # Call the chains in sequence
@@ -85,6 +51,56 @@ def generate_resume_suggestions(resume_text, job_description):
     }).strip()
 
     # Return the results in the expected format
+    return {
+        "compatibility_evaluation": compatibility_evaluation,
+        "suggestions": suggestions,
+        "bullet_points": bullet_points
+    }
+
+
+def generate_resume_suggestions_with_key(resume_text, job_description, user_api_key):
+    """
+    A version of `generate_resume_suggestions` that dynamically accepts a user-provided OpenAI API key.
+
+    :param resume_text: Extracted text from a resume.
+    :param job_description: Text of the job description.
+    :param user_api_key: The OpenAI API key provided by the user.
+    :return: A dictionary containing compatibility evaluation, improvement suggestions, and bullet points.
+    """
+    # Initialize the OpenAI client with the user's API key
+    client = OpenAI(temperature=0, openai_api_key=user_api_key)
+
+    # Chains using imported templates
+    compatibility_chain = LLMChain(
+        llm=client,
+        prompt=PromptTemplate(template=COMPATIBILITY_TEMPLATE, input_variables=["resume_text", "job_description"])
+    )
+
+    suggestions_chain = LLMChain(
+        llm=client,
+        prompt=PromptTemplate(template=SUGGESTIONS_TEMPLATE, input_variables=["resume_text", "job_description"])
+    )
+
+    bullet_points_chain = LLMChain(
+        llm=client,
+        prompt=PromptTemplate(template=BULLET_POINTS_TEMPLATE, input_variables=["job_description"])
+    )
+
+    # Execute the chains
+    compatibility_evaluation = compatibility_chain.run({
+        "resume_text": resume_text,
+        "job_description": job_description
+    }).strip()
+
+    suggestions = suggestions_chain.run({
+        "resume_text": resume_text,
+        "job_description": job_description
+    }).strip()
+
+    bullet_points = bullet_points_chain.run({
+        "job_description": job_description
+    }).strip()
+
     return {
         "compatibility_evaluation": compatibility_evaluation,
         "suggestions": suggestions,
