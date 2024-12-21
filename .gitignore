@@ -2,6 +2,7 @@
 .env
 .idea
 test_scripts/
-secrets.py
+api_keys/keys.py
+/api_keys
 __pycache__/
 *.pyc

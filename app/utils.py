@@ -1,60 +1,87 @@
-import os
 import tempfile
-
+import os
+from werkzeug.datastructures import FileStorage
+from pdf2image import convert_from_path
 import PyPDF2
 from docx import Document
-from pdf2image import convert_from_path
 import pytesseract
 
-# Define allowed file extensions
-ALLOWED_EXTENSIONS = {'pdf', 'doc', 'docx', 'txt'}
 
-
-def parse_resume(file_like):
+def parse_resume(file_obj):
     """
-    Function to parse a resume file (FileStorage or file path) and extract all text.
+    Parse a resume file, handling both Flask (FileStorage), Streamlit (UploadedFile), and file paths (string).
+    Converts the file into a temporary file for processing and extracts text based on the file type.
 
-    :param file_like: The file or file-like object (path or FileStorage).
-    :return: A string containing all the text from the resume.
+    :param file_obj: The file object (Flask FileStorage, Streamlit UploadedFile, or file path as string).
+    :return: A string containing all extracted text from the resume.
     """
-    temp_file = None
+
+    temp_file_path = None  # Store the temporary file path for cleanup and debugging
     try:
-        # Check if `file_like` is a path or FileStorage object
-        if isinstance(file_like, str):
-            file_path = file_like
-        else:
-            # Save the uploaded file temporarily
-            temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file_like.filename)[1])
-            file_like.save(temp_file.name)
-            temp_file.close()  # Explicitly close the file handle
-            file_path = temp_file.name
+        # Step 1: Handle different input types (Flask FileStorage, Streamlit UploadedFile, or file path)
+        if isinstance(file_obj, str):  # If it's a file path
+            file_path = file_obj
 
-        # Determine file extension and parse accordingly
+        elif isinstance(file_obj, FileStorage):  # Flask's FileStorage object
+            with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file_obj.filename)[1]) as temp_file:
+                file_obj.save(temp_file.name)
+                temp_file_path = temp_file.name
+            file_path = temp_file_path
+
+        elif hasattr(file_obj, "read") and hasattr(file_obj, "name"):  # Streamlit's UploadedFile object
+            with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file_obj.name)[1]) as temp_file:
+                temp_file.write(file_obj.read())
+                temp_file.flush()
+                temp_file_path = temp_file.name
+            file_path = temp_file_path
+
+        else:
+            raise ValueError(f"Unsupported file object type: {type(file_obj)}")
+
+        # Debugging: Log the file path being processed
+        print(f"Temporary file created at: {file_path}")
+
+        # Step 2: Determine the file type from its extension
         file_extension = os.path.splitext(file_path)[1].lower()
 
+        # Step 3: Parse the file based on its type
         if file_extension == '.pdf':
-            text = extract_text_from_pdf(file_path)
-            if not text.strip():
-                print("No text extracted; attempting OCR...")
+            text = extract_text_from_pdf(file_path)  # Extract text from PDF
+            if not text.strip():  # Attempt OCR if no text is extracted
+                print("No text extracted from PDF. Trying OCR...")
                 text = extract_text_from_pdf_with_ocr(file_path)
             return text
+
         elif file_extension == '.docx':
-            return extract_text_from_docx(file_path)
+            return extract_text_from_docx(file_path)  # Extract text from DOCX files
+
         else:
             raise ValueError(f"Unsupported file format: {file_extension}")
 
     finally:
-        # Clean up the temporary file if it was created
-        if temp_file and os.path.exists(temp_file.name):
-            os.unlink(temp_file.name)
+        # Step 4: Cleanup temporary file after processing
+        if temp_file_path and os.path.exists(temp_file_path):
+            try:
+                os.unlink(temp_file_path)  # Delete the temp file
+                print(f"Temporary file deleted: {temp_file_path}")
+            except PermissionError as e:
+                print(f"Permission error while deleting temp file: {e}")
+            except Exception as e:
+                print(f"Error while deleting temp file: {e}")
 
 
 def extract_text_from_pdf(file_path):
+    """
+    Extracts text from a PDF file using PyPDF2.
+
+    :param file_path: Path to the PDF file.
+    :return: Extracted text as a string.
+    """
     text = ""
     with open(file_path, 'rb') as file:
-        reader = PyPDF2.PdfReader(file)
-        print(f"Number of pages: {len(reader.pages)}")
-        for page in reader.pages:
+        pdf_reader = PyPDF2.PdfReader(file)
+        print(f"Number of pages in PDF: {len(pdf_reader.pages)}")
+        for page in pdf_reader.pages:
             page_text = page.extract_text()
             if page_text:
                 text += page_text
@@ -62,16 +89,35 @@ def extract_text_from_pdf(file_path):
 
 
 def extract_text_from_pdf_with_ocr(file_path):
-    # Convert PDF to image using pdf2image
-    pages = convert_from_path(file_path, 300)
+    """
+    Extracts text from a PDF by converting it to images and running OCR (using pytesseract).
+
+    :param file_path: Path to the PDF file.
+    :return: Extracted text as a string.
+    """
     text = ""
-    for page in pages:
-        # Convert the image to text using pytesseract
-        text += pytesseract.image_to_string(page)
+
+    try:
+        # Convert PDF pages to images
+        pages = convert_from_path(file_path, dpi=300)  # Removed 'use_temp=True'
+        for page_index, page in enumerate(pages):
+            print(f"Running OCR on page {page_index + 1}...")
+            text += pytesseract.image_to_string(page)
+    except Exception as e:
+        print(f"Error during OCR processing: {e}")
+        raise e
+
     return text
 
 
+
 def extract_text_from_docx(file_path):
+    """
+    Extracts text from a DOCX file.
+
+    :param file_path: Path to the DOCX file.
+    :return: Extracted text as a string.
+    """
     text = ""
     doc = Document(file_path)
     for paragraph in doc.paragraphs:
@@ -82,9 +128,9 @@ def extract_text_from_docx(file_path):
 def allowed_file(filename):
     """
     Validate if a file has one of the allowed extensions.
+
     :param filename: Name of the file to check
     :return: Boolean indicating if the file is allowed
     """
-
-    # Validate if file has a proper extension
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+    allowed_extensions = {'pdf', 'doc', 'docx', 'txt'}
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_extensions

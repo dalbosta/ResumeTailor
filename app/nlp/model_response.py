@@ -1,7 +1,7 @@
 from langchain_community.llms import OpenAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
-from secrets import OPENAI_API_KEY
+from api_keys.keys import OPENAI_API_KEY
 
 # Initialize the OpenAI client
 client = OpenAI(
@@ -9,13 +9,13 @@ client = OpenAI(
 )
 
 
-def generate_resume_suggestions(resume_text, job_description_text):
+def generate_resume_suggestions(resume_text, job_description):
     """
     Analyze the compatibility between resume and job description,
     provide improvement suggestions, and generate example bullet points.
 
     :param resume_text: Extracted text from the resume.
-    :param job_description_text: Text of the job description.
+    :param job_description: Text of the job description.
     :return: Dictionary containing compatibility evaluation, suggestions, and bullet points.
     """
 
@@ -72,16 +72,16 @@ def generate_resume_suggestions(resume_text, job_description_text):
     # Call the chains in sequence
     compatibility_evaluation = compatibility_chain.run({
         "resume_text": resume_text,
-        "job_description": job_description_text
+        "job_description": job_description
     }).strip()
 
     suggestions = suggestions_chain.run({
         "resume_text": resume_text,
-        "job_description": job_description_text
+        "job_description": job_description
     }).strip()
 
     bullet_points = bullet_points_chain.run({
-        "job_description": job_description_text
+        "job_description": job_description
     }).strip()
 
     # Return the results in the expected format
