@@ -31,7 +31,7 @@ def upload_and_generate_response():
 
         # Generate GPT suggestions using extracted resume text and job description text
         suggestions = generate_resume_suggestions_with_key(
-            resume_text=resume_contents, job_description_text=job_description, user_api_key=OPENAI_API_KEY)
+            resume_text=resume_contents, job_description_text=job_description, user_openai_api_key=OPENAI_API_KEY)
 
         # Return the AI's suggestions
         return jsonify({
