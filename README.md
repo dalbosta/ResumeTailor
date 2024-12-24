@@ -2,8 +2,6 @@
 
 **ResumeTailor** is a tool that leverages AI to improve your resume by analyzing it against a provided job description. The application extracts key information from resumes, validates inputs, and generates actionable suggestions, ensuring compatibility with your target job. It can also provide example bullet points that align with the job description using OpenAI's API.
 
-This project can be run as either a **Flask** app (for REST API-based interactions) or a **Streamlit** app (for a web interface), making it highly versatile.
-
 ---
 
 ## Features
@@ -35,11 +33,10 @@ To run the project, you need the following:
    - `Flask` - For API-based interactions.
    - `Streamlit` - For the web interface.
    - `Werkzeug` - For file handling in Flask.
-   - `numpy` & `pandas` - For data processing support.
    - `PyPDF2` & `pdf2image` - For PDF text parsing and OCR extraction.
    - `pytesseract` - For OCR support.
-   - `docx` - For extracting text from Word files.
-   - `LangChain` packages - For LLM (Large Language Model) integrations.
+   - `python-docx` - For extracting text from Word files.
+   - `langchain-openai` - For LLM (Large Language Model) integrations such as OpenAI.
 
 ---
 
@@ -74,6 +71,7 @@ To run the project, you need the following:
 ## Running the Application
 
 ### Option 1: As a Flask App
+
 1. Start the Flask server:
    ```bash
    export FLASK_APP=app/main.py                # On macOS or Linux
@@ -86,12 +84,19 @@ To run the project, you need the following:
 3. Available routes:
    - **`GET /`**: Home route.
    - **`GET /about`**: About route.
-   - **`POST /api/analyze`**: Accepts JSON input (resume text and job description) to process using OpenAI.
+   - **`POST /api/resume/upload`**:  
+     Accepts a resume file (`file`) and a job description (`job_description`) as part of the form data to process using OpenAI.
+
+   Example cURL command to test the `/api/resume/upload` route:
+   ```bash
+   curl -X POST -F "file=@path/to/your/resume.pdf" -F "job_description=Job description text here" http://127.0.0.1:5000/api/resume/upload
+   ```
 
 ### Option 2: As a Streamlit App
+
 1. Run the Streamlit app:
    ```bash
-   streamlit run app_streamlit/app.py
+   streamlit run app/main.py
    ```
 
 2. Open the URL displayed in the terminal (typically **http://localhost:8501**).
@@ -101,7 +106,6 @@ To run the project, you need the following:
    - Upload your resume (PDF or DOCX format only).
    - Paste the job description.
    - Click "Generate Suggestions" to see results.
-
 
 ---
 
@@ -135,50 +139,13 @@ The app suggests ways to improve your resume to better match the target job. It 
 
 ---
 
-## API Usage via Flask
-
-### Endpoint: `/api/analyze`
-
-#### Request:
-```json
-{
-   "resume": "Cleaned resume text from the user",
-   "job_description": "Given job description for analysis"
-}
-```
-
-#### Response:
-```json
-{
-   "compatibility_evaluation": "Output from OpenAI LLM",
-   "suggestions": "Suggestions for improving the resume",
-   "bullet_points": ["Point 1", "Point 2", "Point 3"]
-}
-```
-
----
-
-## Notes and Tips
-
-1. **Customizability:**  
-   Update the `templates.py` file to use custom prompts tailored to niche industries or specific job roles.
-
-2. **Tesseract OCR Settings:**  
-   Ensure Tesseract's `tesseract` binary is correctly configured in your system's PATH for OCR processing of image-based PDFs.
-
-3. **Environment Variables:**  
-   For production environments, securely manage the `OPENAI_API_KEY` using `.env` files or cloud secrets.
-
----
-
 ## Future Enhancements
 
 - Expand support for additional file formats (e.g., `.txt` resumes).
 - Introduce a scoring report visualization in Streamlit.
 - Implement job-specific keyword extraction for resume tailoring.
-- Implement websearch tools for LLM to find relevant info regarding interviews for given occupation and company
+- Implement web search tools for LLM to find relevant info regarding interviews for given occupation and company.
 
 ---
 
 Feel free to contribute or report issues in the [GitHub Repository](https://github.com/dalbosta/ResumeTailor).
-
