@@ -60,3 +60,33 @@ to enhance the provided resume. Use professional language.
 Job Description:
 {job_description}
 """
+
+# Search and Analyze Interview Process Template
+SEARCH_INTERVIEW_INFO_TEMPLATE = """
+You are an AI assistant helping job applicants prepare for job interviews. Based on the search results provided below, summarize the following for the given company and job title:
+1. Known interview questions for the job.
+2. Typical number of interview rounds for this position.
+3. Key insights or summaries of the experiences shared by applicants.
+
+If there is no relevant information found, explicitly state it in the summary.
+
+Company: {company_name}
+Job Title: {job_title}
+
+Search Results:
+{search_results}
+"""
+
+# Extract Company Name and Job Title Template
+EXTRACT_COMPANY_AND_OCCUPATION_TEMPLATE = """
+Extract the company name and the job title from the following job description text. 
+If either the company name or job title cannot be determined, return "Unknown".
+
+Job Description:
+{job_description}
+
+Return the result in the following format:
+Company Name: [Company Name]
+Job Title: [Job Title]
+"""
+

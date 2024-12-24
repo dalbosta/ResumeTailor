@@ -1,9 +1,7 @@
 from flask import Blueprint, request, jsonify
-from app.nlp.model import generate_resume_suggestions_with_key
-from app.utils import allowed_file
-from app.utils import parse_resume
-
-from api_keys.keys import OPENAI_API_KEY
+from app.nlp.model import run_full_analysis
+from app.utils import allowed_file, parse_resume
+from api_keys.keys import OPENAI_API_KEY, SERP_API_KEY
 
 # Define a Blueprint for routes
 resume_tailor_bp = Blueprint('resume', __name__)
@@ -12,31 +10,37 @@ resume_tailor_bp = Blueprint('resume', __name__)
 @resume_tailor_bp.route('/resume/upload', methods=['POST'])
 def upload_and_generate_response():
     """
-    Upload a resume, parse its content, and compare it with the job description.
-    Returns model suggestions.
+    Upload a resume, parse its content, and analyze it against the job description.
+    Returns analysis results including validation, suggestions, and interview insights.
     """
     try:
-        # Get and validate the uploaded file
+        # Step 1: Get and validate the uploaded file
         uploaded_file = get_uploaded_file()
 
-        # Get and validate the job description text
+        # Step 2: Get and validate the job description text
         job_description = get_job_description()
 
-        # Parse the resume to extract text content
+        # Step 3: Parse the resume to extract text content
         try:
-            resume_contents = parse_resume(uploaded_file)
+            resume_text = parse_resume(uploaded_file)
         except Exception as parse_error:
-            # Handle specific parsing errors
             raise ValueError(f"Failed to parse the resume: {str(parse_error)}")
 
-        # Generate GPT suggestions using extracted resume text and job description text
-        suggestions = generate_resume_suggestions_with_key(
-            resume_text=resume_contents, job_description=job_description, user_openai_api_key=OPENAI_API_KEY)
+        # Step 4: Call the analysis function with the inputs
+        try:
+            results = run_full_analysis(
+                resume_text=resume_text,
+                job_description=job_description,
+                serp_api_key=SERP_API_KEY,  # Pass the SERP API Key from config
+                openai_api_key=OPENAI_API_KEY  # Pass the OpenAI API Key from config
+            )
+        except Exception as analysis_error:
+            raise ValueError(f"Failed to run analysis: {str(analysis_error)}")
 
-        # Return the AI's suggestions
+        # Step 5: Return the analysis results
         return jsonify({
-            'message': 'Resume processed and response generated successfully',
-            'suggestions': suggestions
+            'message': 'Resume analyzed successfully',
+            'results': results
         }), 200
 
     except ValueError as ve:
