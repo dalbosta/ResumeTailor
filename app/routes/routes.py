@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from app.nlp.model_response import generate_resume_suggestions_with_key
+from app.nlp.model import generate_resume_suggestions_with_key
 from app.utils import allowed_file
 from app.utils import parse_resume
 
@@ -31,7 +31,7 @@ def upload_and_generate_response():
 
         # Generate GPT suggestions using extracted resume text and job description text
         suggestions = generate_resume_suggestions_with_key(
-            resume_text=resume_contents, job_description_text=job_description, user_openai_api_key=OPENAI_API_KEY)
+            resume_text=resume_contents, job_description=job_description, user_openai_api_key=OPENAI_API_KEY)
 
         # Return the AI's suggestions
         return jsonify({

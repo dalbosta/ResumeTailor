@@ -6,7 +6,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import streamlit as st
 from app.utils import parse_resume  # Parse resume text from uploaded files
-from app.nlp.model_response import generate_resume_suggestions_with_key
+from app.nlp.model import generate_resume_suggestions_with_key
 
 # Constants for messages
 ERROR_INVALID_API_KEY = "❌ Invalid API key format. API keys usually start with 'sk-'. Please check and try again."

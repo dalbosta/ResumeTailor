@@ -1,9 +1,7 @@
-from langchain_community.llms import OpenAI
-from langchain.chat_models import ChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain.prompts import PromptTemplate
-from langchain.chains import LLMChain
 
-from .templates import (
+from .prompt_templates import (
     COMPATIBILITY_TEMPLATE,
     SUGGESTIONS_TEMPLATE,
     BULLET_POINTS_TEMPLATE,
@@ -18,17 +16,25 @@ DEFAULT_TEMPERATURE = 0
 
 def create_llm_client(api_key, model=DEFAULT_MODEL, temperature=DEFAULT_TEMPERATURE):
     """
-    Create an instance of an LLM client using LangChain's ChatOpenAI.
+    Create an instance of an LLM client using LangChain's updated ChatOpenAI.
     """
-    return ChatOpenAI(openai_api_key=api_key, model=model, temperature=temperature)
+    return ChatOpenAI(
+        openai_api_key=api_key,
+        model_name=model,
+        temperature=temperature)
 
 
 def create_chain(client, template, input_variables):
     """
-    Create an LLM chain given a client, a prompt template, and its input variables.
+    Create a sequence chain using PromptTemplate connected to an LLM.
     """
+    # Create a PromptTemplate
     prompt = PromptTemplate(template=template, input_variables=input_variables)
-    return LLMChain(llm=client, prompt=prompt)
+
+    # Combine the prompt with the client using the pipe operator (|)
+    return prompt | client
+
+
 
 
 def validate_input(client, resume_text, job_description):
@@ -44,20 +50,13 @@ def validate_input(client, resume_text, job_description):
     )
 
     # Run validation chains
-    resume_validation_result = resume_validation_chain.run(
-        {"resume_text": resume_text}
-    ).strip()
-    job_description_validation_result = job_description_validation_chain.run(
-        {"job_description": job_description}
-    ).strip()
+    resume_validation_result = resume_validation_chain.invoke({"resume_text": resume_text}).content.strip()
+    job_description_validation_result = job_description_validation_chain.invoke(
+        {"job_description": job_description}).content.strip()
 
     # Parse validation results
-    resume_validity, resume_sufficiency = parse_validation_result(
-        resume_validation_result
-    )
-    job_description_validity, job_description_sufficiency = parse_validation_result(
-        job_description_validation_result
-    )
+    resume_validity, resume_sufficiency = parse_validation_result(resume_validation_result)
+    job_description_validity, job_description_sufficiency = parse_validation_result(job_description_validation_result)
 
     # Collect errors
     errors = check_validation_errors(
@@ -67,6 +66,7 @@ def validate_input(client, resume_text, job_description):
         job_description_sufficiency,
     )
     return errors
+
 
 
 def check_validation_errors(
@@ -96,7 +96,7 @@ def run_analysis(client, resume_text, job_description):
     """
     Perform analysis for compatibility, improvement suggestions, and bullet points.
     """
-    # Create analysis chains
+    # Create analysis chains as RunnableSequences
     compatibility_chain = create_chain(
         client, COMPATIBILITY_TEMPLATE, ["resume_text", "job_description"]
     )
@@ -108,21 +108,18 @@ def run_analysis(client, resume_text, job_description):
     )
 
     # Run chains and collect results
-    compatibility_evaluation = compatibility_chain.run(
-        {"resume_text": resume_text, "job_description": job_description}
-    ).strip()
-    suggestions = suggestions_chain.run(
-        {"resume_text": resume_text, "job_description": job_description}
-    ).strip()
-    bullet_points = bullet_points_chain.run(
-        {"job_description": job_description}
-    ).strip()
+    compatibility_evaluation = compatibility_chain.invoke(
+        {"resume_text": resume_text, "job_description": job_description}).content.strip()
+    suggestions = suggestions_chain.invoke(
+        {"resume_text": resume_text, "job_description": job_description}).content.strip()
+    bullet_points = bullet_points_chain.invoke({"job_description": job_description}).content.strip()
 
     return {
         "compatibility_evaluation": compatibility_evaluation,
         "suggestions": suggestions,
         "bullet_points": bullet_points,
     }
+
 
 
 def parse_validation_result(validation_result):
@@ -154,7 +151,7 @@ def generate_resume_suggestions_with_key(resume_text, job_description, user_open
     """
     Validate and evaluate inputs (resume and job description) before proceeding with comparison and suggestions.
     """
-    # Create LLM_client
+    # Create LLM client
     llm_client = create_llm_client(user_openai_api_key)
 
     # Validate inputs

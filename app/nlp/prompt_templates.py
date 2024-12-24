@@ -1,4 +1,4 @@
-# templates.py
+# prompt_templates.py
 
 # Validate and Evaluate Resume Template
 VALIDATE_AND_EVALUATE_RESUME = """
