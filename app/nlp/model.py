@@ -54,8 +54,28 @@ class LLMHelper:
             lines = result.splitlines()
             company_name = lines[0].split(":")[1].strip()
             job_title = lines[1].split(":")[1].strip()
+
+            # Handle specific cases
+            if company_name == "Unknown" and job_title == "Unknown":
+                raise ValueError(
+                    "Neither the company name nor the job title could be determined. "
+                    "Please ensure both are clearly mentioned in the job description."
+                )
+            elif company_name == "Unknown":
+                raise ValueError(
+                    "The company name could not be determined. Please ensure the company name is clearly mentioned in the job description."
+                )
+            elif job_title == "Unknown":
+                raise ValueError(
+                    "The job title could not be determined. Please ensure the job title is clearly mentioned in the job description."
+                )
+
         except Exception as e:
-            raise ValueError(f"Failed to parse extraction result: {result}. Error: {e}")
+            # Capture and re-raise any parsing errors with context
+            raise ValueError(
+                f"Failed to parse extraction result. Original output:\n{result}\n\n"
+                f"Error: {str(e)}"
+            )
 
         return company_name, job_title
 
@@ -233,10 +253,10 @@ def run_full_analysis(resume_text, job_description, serp_api_key, openai_api_key
     print("Extracting company name and job title from the job description...")
     try:
         company_name, job_title = llm_helper.extract_company_and_job_title(job_description)
-        if company_name == "Unknown" or job_title == "Unknown":
-            raise ValueError("Failed to extract company name or job title from the job description.")
-    except Exception as e:
-        return {"error": "Extraction failed.", "details": str(e)}
+    except ValueError as e:
+        # Return the specific error message from the extraction method
+        return {"error": str(e)}
+
     print(f"Extracted Company Name: {company_name}, Job Title: {job_title}")
 
     # Step 4: Search and analyze interview insights

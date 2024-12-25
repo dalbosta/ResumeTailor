@@ -76,8 +76,8 @@ def display_results(results):
     Display results of the `run_full_analysis` function.
     """
     if "error" in results:
-        # Error in the analysis (validation or processing)
-        st.error(f"❌ {results['error']}")
+        # Error from `run_full_analysis`
+        st.error(results["error"])
         if "details" in results:
             st.subheader("Details")
             for detail in results["details"]:
@@ -85,7 +85,7 @@ def display_results(results):
         return
 
     # Display results
-    st.subheader("🚀 Validation Results")
+    st.subheader("✅ Validation Results")
     validation_results = results.get("validation_results", "No validation results available.")
     st.write(validation_results)
 
@@ -106,83 +106,86 @@ def display_results(results):
     st.write(interview_insights)
 
 
+def generate_insights(uploaded_file, job_description_text):
+    """
+    Generate insights by running the full analysis pipeline.
+    """
+    # Validate inputs
+    if not validate_inputs(uploaded_file, job_description_text):
+        return
+
+    # Process the uploaded resume
+    resume_text = process_resume(uploaded_file)
+    if not resume_text:
+        return
+
+    # Run the analysis pipeline
+    try:
+        with st.spinner("Running full analysis..."):
+            results = run_full_analysis(
+                resume_text=resume_text,
+                job_description=job_description_text,
+                serp_api_key=st.session_state.serp_api_key,
+                openai_api_key=st.session_state.openai_api_key,
+            )
+        display_results(results)
+    except Exception as e:
+        st.error(str(e))  # Use the exception message directly
+
+
+
 def main():
-    """Main function to run the Streamlit app for the updated resume and job description analysis."""
-    # Title and App Description
-    st.title("ResumeTailor 2.0")
+    """
+    Main entry-point function for running the Streamlit app.
+    """
+    # Title and description
+    st.title("Resume Tailor 1.0")
     st.markdown(
         """
         <p style="line-height:1.5;font-size:16px;">
-        Welcome to <b>Resume Tailor 2.0</b>! 🚀<br>
-        Use this tool to evaluate how well your resume aligns with job descriptions. <br>
-        🎯 Includes the ability to analyze and provide insights, compatibility evaluations, and tailored improvement suggestions. <br><br>
-        👉 <b>Workflow:</b>
-        <ol>
-        <li>Enter your OpenAI and SERP API keys (These are NOT stored).</li>
-        <li>Upload your resume (PDF or DOCX format).</li>
-        <li>Paste the target job description.</li>
-        <li>View tailored feedback and insights!</li>
-        </ol>
+        🚀 Welcome to <b>Resume Tailor 2.0</b>! <br>
+        📄 Use this tool to evaluate how well your resume aligns with job descriptions.
+        <br>
+        🎯 This tool provides compatibility evaluations, tailored suggestions, and more insights!
         </p>
         """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
-    # Step 1: API Key Input
+    # Step 1: API Key Section
     st.subheader("Step 1: Enter Your API Keys")
     openai_api_key_input = st.text_input(
-        "Enter your OpenAI API Key",
+        "OpenAI API Key",
         type="password",
-        help="Required for processing LLM analysis. Keys will not be stored."
+        help="Enter your OpenAI API key for LLM analysis. (Starts with 'sk-')"
     )
     serp_api_key_input = st.text_input(
-        "Enter your SERP API Key",
+        "SERP API Key",
         type="password",
-        help="Required for interview insights using search engines. Keys will not be stored."
+        help="Enter your SERP API key for fetching interview insights."
     )
-
     if not validate_api_keys(openai_api_key_input, serp_api_key_input):
         return
 
-    # Step 2: Upload Resume
+    # Step 2: Resume Upload Section
     st.subheader("Step 2: Upload Your Resume")
     uploaded_file = st.file_uploader(
-        "Upload Resume (PDF or DOCX format only)",
+        "Upload resume (PDF or DOCX format)",
         type=["pdf", "docx"],
-        help="Accepted formats are PDF or DOCX."
+        help="Accepted formats: PDF, DOCX. Smaller files are recommended for better analysis."
     )
 
-    # Step 3: Enter Job Description
+    # Step 3: Job Description Section
     st.subheader("Step 3: Paste the Job Description")
     job_description_text = st.text_area(
-        "Paste the job description here",
-        placeholder="Provide the job description you want to target with your resume.",
-        help="Detailed descriptions provide better results."
+        "Paste Job Description",
+        placeholder="Copy and paste the job description here...",
+        help="Better descriptions generate more relevant feedback!"
     )
 
-    # Step 4: Generate Suggestions
+    # Analyze inputs when button is clicked
     if st.button("Generate Insights"):
-        # Validate inputs
-        if not validate_inputs(uploaded_file, job_description_text):
-            return
-
-        # Process resume
-        resume_text = process_resume(uploaded_file)
-        if not resume_text:
-            return
-
-        # Run analysis
-        try:
-            with st.spinner("Running full analysis..."):
-                results = run_full_analysis(
-                    resume_text=resume_text,
-                    job_description=job_description_text,
-                    serp_api_key=st.session_state.serp_api_key,
-                    openai_api_key=st.session_state.openai_api_key
-                )
-            display_results(results)
-        except Exception as e:
-            st.error(ERROR_ANALYSIS.format(e))
+        generate_insights(uploaded_file, job_description_text)
 
 
 if __name__ == "__main__":

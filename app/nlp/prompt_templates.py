@@ -80,13 +80,14 @@ Search Results:
 # Extract Company Name and Job Title Template
 EXTRACT_COMPANY_AND_OCCUPATION_TEMPLATE = """
 Extract the company name and the job title from the following job description text. 
-If either the company name or job title cannot be determined, return "Unknown".
+If either the company name or job title cannot be determined, return "Unknown" for the relevant field.
 
 Job Description:
 {job_description}
 
 Return the result in the following format:
-Company Name: [Company Name]
-Job Title: [Job Title]
+Company Name: [Company Name or Unknown]
+Job Title: [Job Title or Unknown]
 """
+
 
